@@ -66,7 +66,8 @@ static int add_edge_node(vertex_t *src, vertex_t *dest)
  *
  * Return: 1 on success, 0 on failure
  */
-int graph_add_edge(graph_t *graph, const char *src, const char *dest, edge_type_t type)
+int graph_add_edge(graph_t *graph, const char *src, const char *dest,
+	edge_type_t type)
 {
 	vertex_t *v_src, *v_dest;
 
@@ -89,6 +90,7 @@ int graph_add_edge(graph_t *graph, const char *src, const char *dest, edge_type_
 		{
 			/* rollback last edge added to v_src */
 			edge_t *tmp = v_src->edges, *prev = NULL;
+
 			if (!tmp)
 				return (0);
 			while (tmp->next)
