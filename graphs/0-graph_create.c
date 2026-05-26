@@ -8,13 +8,13 @@
  */
 graph_t *graph_create(void)
 {
-    graph_t *graph = malloc(sizeof(graph_t));
+	graph_t *graph = malloc(sizeof(graph_t));
 
-    if (!graph)
-        return (NULL);
+	if (!graph)
+		return (NULL);
 
-    graph->nb_vertices = 0;
-    graph->vertices = NULL;
+	graph->nb_vertices = 0;
+	graph->vertices = NULL;
 
-    return (graph);
+	return (graph);
 }
