@@ -11,51 +11,51 @@
  */
 vertex_t *graph_add_vertex(graph_t *graph, const char *str)
 {
-    vertex_t *v, *last;
-    char *copy;
+ 	vertex_t *v, *last;
+ 	char *copy;
 
-    if (!graph || !str)
-        return (NULL);
+	if (!graph || !str)
+		return (NULL);
 
-    /* check for duplicate */
-    v = graph->vertices;
-    while (v)
-    {
-        if (v->content && strcmp(v->content, str) == 0)
-            return (NULL);
-        v = v->next;
-    }
+	/* check for duplicate */
+	v = graph->vertices;
+	while (v)
+	{
+		if (v->content && strcmp(v->content, str) == 0)
+			return (NULL);
+		v = v->next;
+	}
 
-    copy = strdup(str);
-    if (!copy)
-        return (NULL);
+	copy = strdup(str);
+	if (!copy)
+		return (NULL);
 
-    v = malloc(sizeof(vertex_t));
-    if (!v)
-    {
-        free(copy);
-        return (NULL);
-    }
+	v = malloc(sizeof(vertex_t));
+	if (!v)
+	{
+		free(copy);
+		return (NULL);
+	}
 
-    v->content = copy;
-    v->nb_edges = 0;
-    v->edges = NULL;
-    v->next = NULL;
-    v->index = graph->nb_vertices;
+	v->content = copy;
+	v->nb_edges = 0;
+	v->edges = NULL;
+	v->next = NULL;
+	v->index = graph->nb_vertices;
 
-    if (!graph->vertices)
-    {
-        graph->vertices = v;
-    }
-    else
-    {
-        last = graph->vertices;
-        while (last->next)
-            last = last->next;
-        last->next = v;
-    }
+	if (!graph->vertices)
+	{
+		graph->vertices = v;
+	}
+	else
+	{
+		last = graph->vertices;
+		while (last->next)
+			last = last->next;
+		last->next = v;
+	}
 
-    graph->nb_vertices++;
+	graph->nb_vertices++;
 
-    return (v);
+	return (v);
 }
