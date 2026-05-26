@@ -11,8 +11,8 @@
  */
 vertex_t *graph_add_vertex(graph_t *graph, const char *str)
 {
- 	vertex_t *v, *last;
- 	char *copy;
+	vertex_t *v, *last;
+	char *copy;
 
 	if (!graph || !str)
 		return (NULL);
