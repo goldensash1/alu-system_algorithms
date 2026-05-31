@@ -7,7 +7,8 @@
  * @node: node to free
  * @free_data: function used to free node data, or NULL
  */
-static void free_heap_nodes(binary_tree_node_t *node, void (*free_data)(void *))
+static void free_heap_nodes(binary_tree_node_t *node,
+	void (*free_data)(void *))
 {
 	if (!node)
 		return;
