@@ -79,7 +79,7 @@ static void sift_down(binary_tree_node_t *node, int (*cmp)(void *, void *))
 	binary_tree_node_t *child;
 
 	child = smaller_child(node, cmp);
-	while (child && cmp(child->data, node->data) < 0)
+	while (child && cmp(child->data, node->data) <= 0)
 	{
 		swap_data(node, child);
 		node = child;

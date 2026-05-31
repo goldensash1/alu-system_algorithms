@@ -5,11 +5,12 @@
 
 /**
  * struct binary_tree_node_s - Binary tree node data structure
- *
- * @data: Data stored in a node
+ * @data: Data stored in the node
  * @left: Pointer to the left child
  * @right: Pointer to the right child
  * @parent: Pointer to the parent node
+ *
+ * Description: Node used to build the binary tree representation.
  */
 typedef struct binary_tree_node_s
 {
@@ -21,10 +22,11 @@ typedef struct binary_tree_node_s
 
 /**
  * struct heap_s - Heap data structure
- *
  * @size: Size of the heap (number of nodes)
  * @data_cmp: Function to compare two nodes data
  * @root: Pointer to the root node of the heap
+ *
+ * Description: Min-heap wrapper around a binary tree.
  */
 typedef struct heap_s
 {

@@ -24,7 +24,8 @@ static void free_heap_nodes(binary_tree_node_t *node, void (*free_data)(void *))
  * @heap: heap to delete
  * @free_data: function used to free node data, or NULL
  */
-void heap_delete(heap_t *heap, void (*free_data)(void *))
+void heap_delete(heap_t *heap,
+	void (*free_data)(void *))
 {
 	if (!heap)
 		return;
