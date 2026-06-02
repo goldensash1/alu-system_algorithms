@@ -159,6 +159,7 @@ queue_t *backtracking_array(char **map, int rows, int cols,
 	point_t *stack;
 	void *content;
 	int i;
+
 	if (!map || rows <= 0 || cols <= 0 || !start || !target)
 		return (NULL);
 	visited = alloc_visited(rows, cols);
