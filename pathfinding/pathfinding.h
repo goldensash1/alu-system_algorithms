@@ -41,6 +41,17 @@ typedef struct queue_s
 	queue_node_t *back;
 } queue_t;
 
+/**
+ * struct visited_node_s - Tracks a visited vertex and its path parent
+ * @vertex: Pointer to the visited vertex
+ * @parent: Parent vertex in the discovered path
+ */
+typedef struct visited_node_s
+{
+	vertex_t *vertex;
+	vertex_t *parent;
+} visited_node_t;
+
 /* Queue functions */
 queue_t *queue_create(void);
 int enqueue(queue_t *queue, void *content);

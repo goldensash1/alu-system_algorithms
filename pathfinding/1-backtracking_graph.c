@@ -5,22 +5,6 @@
 #include "pathfinding.h"
 
 /**
- * queue_create - Create an empty queue
- *
- * Return: Pointer to new queue, or NULL on failure
- */
-queue_t *queue_create(void)
-{
-	queue_t *q = malloc(sizeof(queue_t));
-
-	if (!q)
-		return (NULL);
-	q->front = NULL;
-	q->back = NULL;
-	return (q);
-}
-
-/**
  * enqueue - Add an element to the back of a queue
  * @queue: Pointer to the queue
  * @content: Data to add
@@ -74,59 +58,6 @@ void *dequeue(queue_t *queue)
 }
 
 /**
- * struct visited_node_s - Tracks a visited vertex and its path parent
- * @vertex: Pointer to the visited vertex
- * @parent: Parent vertex in the discovered path
- */
-typedef struct visited_node_s
-{
-	vertex_t *vertex;
-	vertex_t *parent;
-} visited_node_t;
-
-/**
- * is_visited - Check if a vertex has already been visited
- * @visited: Array of visited nodes
- * @vertex: The vertex to check
- * @count: Number of entries in visited
- *
- * Return: 1 if visited, 0 otherwise
- */
-static int is_visited(visited_node_t *visited,
-		vertex_t const *vertex, int count)
-{
-	int i;
-
-	for (i = 0; i < count; i++)
-	{
-		if (visited[i].vertex == vertex)
-			return (1);
-	}
-	return (0);
-}
-
-/**
- * get_parent - Retrieve the parent of a vertex in the path
- * @visited: Array of visited nodes
- * @vertex: The vertex whose parent to find
- * @count: Number of entries in visited
- *
- * Return: Parent vertex pointer, or NULL
- */
-static vertex_t *get_parent(visited_node_t *visited,
-		vertex_t const *vertex, int count)
-{
-	int i;
-
-	for (i = 0; i < count; i++)
-	{
-		if (visited[i].vertex == vertex)
-			return (visited[i].parent);
-	}
-	return (NULL);
-}
-
-/**
  * bt_recurse - Recursive backtracking helper for graph search
  * @current: Current vertex being explored
  * @target: Target vertex
@@ -143,20 +74,19 @@ static int bt_recurse(vertex_t const *current, vertex_t const *target,
 	int i;
 
 	printf("Checking %s\n", current->content);
-
 	if (*count >= capacity)
 		return (0);
 	visited[*count].vertex = (vertex_t *)current;
 	visited[*count].parent = NULL;
 	(*count)++;
-
 	if (current == target)
 		return (1);
-
 	edge = current->edges;
 	while (edge)
 	{
-		if (!is_visited(visited, edge->dest, *count))
+		for (i = 0; i < *count && visited[i].vertex != edge->dest; i++)
+			;
+		if (i == *count)
 		{
 			if (bt_recurse(edge->dest, target, visited, count, capacity))
 			{
@@ -177,12 +107,12 @@ static int bt_recurse(vertex_t const *current, vertex_t const *target,
 }
 
 /**
- * build_path - Build queue from target back to start using parent links
+ * build_path - Build result queue tracing parent links from target to start
  * @visited: Array of visited nodes
  * @count: Number of entries
  * @target: The target vertex
  *
- * Return: Queue containing the path, or NULL on failure
+ * Return: Queue containing path start→target, or NULL on failure
  */
 static queue_t *build_path(visited_node_t *visited, int count,
 		vertex_t const *target)
@@ -191,12 +121,11 @@ static queue_t *build_path(visited_node_t *visited, int count,
 	char **arr;
 	vertex_t *cur;
 	char *copy;
-	int len, i;
+	int len, i, j;
 
 	arr = malloc((count + 1) * sizeof(char *));
 	if (!arr)
 		return (NULL);
-
 	cur = (vertex_t *)target;
 	len = 0;
 	while (cur)
@@ -210,10 +139,12 @@ static queue_t *build_path(visited_node_t *visited, int count,
 			return (NULL);
 		}
 		arr[len++] = copy;
-		cur = get_parent(visited, cur, count);
+		j = 0;
+		while (j < count && visited[j].vertex != cur)
+			j++;
+		cur = j < count ? visited[j].parent : NULL;
 	}
-
-	path = queue_create();
+	path = calloc(1, sizeof(queue_t));
 	if (!path)
 	{
 		for (i = 0; i < len; i++)
@@ -221,10 +152,8 @@ static queue_t *build_path(visited_node_t *visited, int count,
 		free(arr);
 		return (NULL);
 	}
-
 	for (i = len - 1; i >= 0; i--)
 		enqueue(path, arr[i]);
-
 	free(arr);
 	return (path);
 }
@@ -246,11 +175,9 @@ queue_t *backtracking_graph(graph_t *graph, vertex_t const *start,
 
 	if (!graph || !start || !target)
 		return (NULL);
-
 	visited = malloc(graph->nb_vertices * sizeof(visited_node_t));
 	if (!visited)
 		return (NULL);
-
 	count = 0;
 	if (!bt_recurse(start, target, visited, &count,
 			(int)graph->nb_vertices))
@@ -258,7 +185,6 @@ queue_t *backtracking_graph(graph_t *graph, vertex_t const *start,
 		free(visited);
 		return (NULL);
 	}
-
 	path = build_path(visited, count, target);
 	free(visited);
 	return (path);
