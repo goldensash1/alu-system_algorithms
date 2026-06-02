@@ -4,7 +4,7 @@
 #include "pathfinding.h"
 
 /**
- * is_valid - Check if a cell is valid and walkable
+ * is_valid - Check if a cell is within bounds and walkable
  * @map: The map
  * @rows: Number of rows
  * @cols: Number of columns
@@ -14,15 +14,16 @@
  *
  * Return: 1 if valid, 0 otherwise
  */
-static int is_valid(char **map, int rows, int cols, int x, int y, int **visited)
+static int is_valid(char **map, int rows, int cols,
+		int x, int y, int **visited)
 {
-    if (x < 0 || x >= cols || y < 0 || y >= rows)
-        return (0);
-    if (map[y][x] == '1')  /* Wall */
-        return (0);
-    if (visited[y][x])  /* Already visited */
-        return (0);
-    return (1);
+	if (x < 0 || x >= cols || y < 0 || y >= rows)
+		return (0);
+	if (map[y][x] == '1')
+		return (0);
+	if (visited[y][x])
+		return (0);
+	return (1);
 }
 
 /**
@@ -33,58 +34,70 @@ static int is_valid(char **map, int rows, int cols, int x, int y, int **visited)
  * @current: Current position
  * @target: Target position
  * @visited: 2D array tracking visited cells
- * @path: Queue storing the path
+ * @path: Queue to store the final path
+ * @stack: Array used as a path stack
+ * @depth: Current recursion depth
  *
  * Return: 1 if path found, 0 otherwise
  */
 static int backtrack(char **map, int rows, int cols, point_t current,
-                     point_t const *target, int **visited, queue_t *path)
+		point_t const *target, int **visited, queue_t *path,
+		point_t *stack, int depth)
 {
-    point_t *point;
+	int dirs[4][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+	int i, nx, ny;
+	point_t next;
+	point_t *pt;
 
-    printf("Checking coordinates [%d, %d]\n", current.x, current.y);
-    visited[current.y][current.x] = 1;
-    
-    /* Allocate and enqueue the current point */
-    point = malloc(sizeof(point_t));
-    if (point)
-    {
-        point->x = current.x;
-        point->y = current.y;
-        enqueue(path, point);
-    }
+	printf("Checking coordinates [%d, %d]\n", current.x, current.y);
+	visited[current.y][current.x] = 1;
+	stack[depth] = current;
 
-    /* Check if we reached the target */
-    if (current.x == target->x && current.y == target->y)
-        return (1);
+	if (current.x == target->x && current.y == target->y)
+	{
+		for (i = 0; i <= depth; i++)
+		{
+			pt = malloc(sizeof(point_t));
+			if (!pt)
+				return (0);
+			*pt = stack[i];
+			enqueue(path, pt);
+		}
+		return (1);
+	}
 
-    /* Direction order: RIGHT, BOTTOM, LEFT, TOP */
-    /* x increases rightward (column), y increases downward (row) */
-    int directions[4][2] = {
-        {1, 0},   /* RIGHT - x increases */
-        {0, 1},   /* BOTTOM - y increases */
-        {-1, 0},  /* LEFT - x decreases */
-        {0, -1}   /* TOP - y decreases */
-    };
-
-    for (int i = 0; i < 4; i++)
-    {
-        int new_x = current.x + directions[i][0];
-        int new_y = current.y + directions[i][1];
-
-        if (is_valid(map, rows, cols, new_x, new_y, visited))
-        {
-            point_t next = {new_x, new_y};
-            if (backtrack(map, rows, cols, next, target, visited, path))
-                return (1);
-        }
-    }
-
-    return (0);
+	for (i = 0; i < 4; i++)
+	{
+		nx = current.x + dirs[i][0];
+		ny = current.y + dirs[i][1];
+		if (is_valid(map, rows, cols, nx, ny, visited))
+		{
+			next.x = nx;
+			next.y = ny;
+			if (backtrack(map, rows, cols, next, target,
+					visited, path, stack, depth + 1))
+				return (1);
+		}
+	}
+	return (0);
 }
 
 /**
- * backtracking_array - Find a path in a 2D array using backtracking
+ * free_visited - Free the visited 2D array
+ * @visited: The visited array
+ * @rows: Number of rows
+ */
+static void free_visited(int **visited, int rows)
+{
+	int i;
+
+	for (i = 0; i < rows; i++)
+		free(visited[i]);
+	free(visited);
+}
+
+/**
+ * backtracking_array - Find path in a 2D array using backtracking
  * @map: 2D array where '0' is walkable and '1' is blocked
  * @rows: Number of rows
  * @cols: Number of columns
@@ -94,58 +107,57 @@ static int backtrack(char **map, int rows, int cols, point_t current,
  * Return: Queue containing the path, or NULL if no path found
  */
 queue_t *backtracking_array(char **map, int rows, int cols,
-                            point_t const *start, point_t const *target)
+		point_t const *start, point_t const *target)
 {
-    queue_t *path;
-    int **visited;
-    int i;
+	queue_t *path;
+	int **visited;
+	point_t *stack;
+	void *content;
+	int i;
 
-    if (!map || rows <= 0 || cols <= 0 || !start || !target)
-        return (NULL);
+	if (!map || rows <= 0 || cols <= 0 || !start || !target)
+		return (NULL);
 
-    /* Allocate visited array */
-    visited = malloc(rows * sizeof(int *));
-    if (!visited)
-        return (NULL);
+	visited = malloc(rows * sizeof(int *));
+	if (!visited)
+		return (NULL);
+	for (i = 0; i < rows; i++)
+	{
+		visited[i] = malloc(cols * sizeof(int));
+		if (!visited[i])
+		{
+			while (--i >= 0)
+				free(visited[i]);
+			free(visited);
+			return (NULL);
+		}
+		memset(visited[i], 0, cols * sizeof(int));
+	}
 
-    for (i = 0; i < rows; i++)
-    {
-        visited[i] = malloc(cols * sizeof(int));
-        if (!visited[i])
-        {
-            while (--i >= 0)
-                free(visited[i]);
-            free(visited);
-            return (NULL);
-        }
-        memset(visited[i], 0, cols * sizeof(int));
-    }
+	stack = malloc(rows * cols * sizeof(point_t));
+	if (!stack)
+	{
+		free_visited(visited, rows);
+		return (NULL);
+	}
 
-    /* Create path queue */
-    path = queue_create();
-    if (!path)
-    {
-        for (i = 0; i < rows; i++)
-            free(visited[i]);
-        free(visited);
-        return (NULL);
-    }
+	path = queue_create();
+	if (!path)
+	{
+		free(stack);
+		free_visited(visited, rows);
+		return (NULL);
+	}
 
-    /* Perform backtracking */
-    if (!backtrack(map, rows, cols, *start, target, visited, path))
-    {
-        /* No path found, free the queue and return NULL */
-        void *content;
-        while ((content = dequeue(path)))
-            free(content);
-        free(path);
-        path = NULL;
-    }
+	if (!backtrack(map, rows, cols, *start, target, visited, path, stack, 0))
+	{
+		while ((content = dequeue(path)))
+			free(content);
+		free(path);
+		path = NULL;
+	}
 
-    /* Free visited array */
-    for (i = 0; i < rows; i++)
-        free(visited[i]);
-    free(visited);
-
-    return (path);
+	free(stack);
+	free_visited(visited, rows);
+	return (path);
 }

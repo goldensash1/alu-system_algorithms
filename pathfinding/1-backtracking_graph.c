@@ -5,110 +5,159 @@
 #include "pathfinding.h"
 
 /**
- * struct visited_info_s - Info about visited vertices
- * @vertex: Pointer to the vertex
- * @parent: Parent vertex in the path
+ * struct visited_node_s - Tracks a visited vertex and its path parent
+ * @vertex: Pointer to the visited vertex
+ * @parent: Parent vertex in the discovered path
  */
-typedef struct visited_info_s
+typedef struct visited_node_s
 {
-    vertex_t *vertex;
-    vertex_t *parent;
-} visited_info_t;
+	vertex_t *vertex;
+	vertex_t *parent;
+} visited_node_t;
 
 /**
- * is_visited - Check if a vertex has been visited
- * @visited: Array of visited info
+ * is_visited - Check if a vertex has already been visited
+ * @visited: Array of visited nodes
  * @vertex: The vertex to check
- * @count: Number of visited vertices
+ * @count: Number of entries in visited
  *
  * Return: 1 if visited, 0 otherwise
  */
-static int is_visited(visited_info_t *visited, vertex_t const *vertex, int count)
+static int is_visited(visited_node_t *visited,
+		vertex_t const *vertex, int count)
 {
-    int i;
+	int i;
 
-    for (i = 0; i < count; i++)
-    {
-        if (visited[i].vertex == vertex)
-            return (1);
-    }
-    return (0);
+	for (i = 0; i < count; i++)
+	{
+		if (visited[i].vertex == vertex)
+			return (1);
+	}
+	return (0);
 }
 
 /**
- * get_parent - Get parent of a vertex
- * @visited: Array of visited info
- * @vertex: The vertex
- * @count: Number of visited vertices
+ * get_parent - Retrieve the parent of a vertex in the path
+ * @visited: Array of visited nodes
+ * @vertex: The vertex whose parent to find
+ * @count: Number of entries in visited
  *
- * Return: Parent vertex or NULL
+ * Return: Parent vertex pointer, or NULL
  */
-static vertex_t *get_parent(visited_info_t *visited, vertex_t const *vertex,
-                             int count)
+static vertex_t *get_parent(visited_node_t *visited,
+		vertex_t const *vertex, int count)
 {
-    int i;
+	int i;
 
-    for (i = 0; i < count; i++)
-    {
-        if (visited[i].vertex == vertex)
-            return (visited[i].parent);
-    }
-    return (NULL);
+	for (i = 0; i < count; i++)
+	{
+		if (visited[i].vertex == vertex)
+			return (visited[i].parent);
+	}
+	return (NULL);
 }
 
 /**
- * backtrack - Recursive backtracking helper for graph
- * @current: Current vertex
+ * bt_recurse - Recursive backtracking helper for graph search
+ * @current: Current vertex being explored
  * @target: Target vertex
- * @visited: Array of visited info
- * @count: Pointer to number of visited vertices
- * @capacity: Capacity of visited array
+ * @visited: Array of visited nodes
+ * @count: Pointer to the number of visited entries
+ * @capacity: Maximum capacity of visited array
  *
  * Return: 1 if path found, 0 otherwise
  */
-static int backtrack(vertex_t const *current, vertex_t const *target,
-                     visited_info_t *visited, int *count, int capacity)
+static int bt_recurse(vertex_t const *current, vertex_t const *target,
+		visited_node_t *visited, int *count, int capacity)
 {
-    edge_t *edge;
+	edge_t *edge;
+	int i;
 
-    printf("Checking %s\n", current->content);
+	printf("Checking %s\n", current->content);
 
-    /* Add current to visited */
-    if (*count >= capacity)
-        return (0);
-    visited[*count].vertex = (vertex_t *)current;
-    visited[*count].parent = NULL;
-    (*count)++;
+	if (*count >= capacity)
+		return (0);
+	visited[*count].vertex = (vertex_t *)current;
+	visited[*count].parent = NULL;
+	(*count)++;
 
-    /* Check if we reached target */
-    if (current == target)
-        return (1);
+	if (current == target)
+		return (1);
 
-    /* Explore neighbors */
-    edge = current->edges;
-    while (edge)
-    {
-        if (!is_visited(visited, edge->dest, *count))
-        {
-            if (backtrack(edge->dest, target, visited, count, capacity))
-            {
-                /* Mark the parent for path reconstruction */
-                int i;
-                for (i = 0; i < *count; i++)
-                {
-                    if (visited[i].vertex == edge->dest)
-                    {
-                        visited[i].parent = (vertex_t *)current;
-                        break;
-                    }
-                }
-                return (1);
-            }
-        }
-        edge = edge->next;
-    }
+	edge = current->edges;
+	while (edge)
+	{
+		if (!is_visited(visited, edge->dest, *count))
+		{
+			if (bt_recurse(edge->dest, target, visited, count, capacity))
+			{
+				for (i = 0; i < *count; i++)
+				{
+					if (visited[i].vertex == edge->dest)
+					{
+						visited[i].parent = (vertex_t *)current;
+						break;
+					}
+				}
+				return (1);
+			}
+		}
+		edge = edge->next;
+	}
+	return (0);
+}
 
-    return (0);
+/**
+ * build_path - Build queue from target back to start using parent links
+ * @visited: Array of visited nodes
+ * @count: Number of entries
+ * @target: The target vertex
+ *
+ * Return: Queue containing the path, or NULL on failure
+ */
+static queue_t *build_path(visited_node_t *visited, int count,
+		vertex_t const *target)
+{
+	queue_t *path;
+	char **arr;
+	vertex_t *cur;
+	char *copy;
+	int len, i;
+
+	arr = malloc((count + 1) * sizeof(char *));
+	if (!arr)
+		return (NULL);
+
+	cur = (vertex_t *)target;
+	len = 0;
+	while (cur)
+	{
+		copy = strdup(cur->content);
+		if (!copy)
+		{
+			for (i = 0; i < len; i++)
+				free(arr[i]);
+			free(arr);
+			return (NULL);
+		}
+		arr[len++] = copy;
+		cur = get_parent(visited, cur, count);
+	}
+
+	path = queue_create();
+	if (!path)
+	{
+		for (i = 0; i < len; i++)
+			free(arr[i]);
+		free(arr);
+		return (NULL);
+	}
+
+	for (i = len - 1; i >= 0; i--)
+		enqueue(path, arr[i]);
+
+	free(arr);
+	return (path);
 }
 
 /**
@@ -120,76 +169,28 @@ static int backtrack(vertex_t const *current, vertex_t const *target,
  * Return: Queue containing the path, or NULL if no path found
  */
 queue_t *backtracking_graph(graph_t *graph, vertex_t const *start,
-                            vertex_t const *target)
+		vertex_t const *target)
 {
-    queue_t *path;
-    visited_info_t *visited;
-    int count = 0;
-    vertex_t *current;
-    char *city_copy;
+	visited_node_t *visited;
+	queue_t *path;
+	int count;
 
-    if (!graph || !start || !target)
-        return (NULL);
+	if (!graph || !start || !target)
+		return (NULL);
 
-    /* Allocate visited array */
-    visited = malloc(graph->nb_vertices * sizeof(visited_info_t));
-    if (!visited)
-        return (NULL);
+	visited = malloc(graph->nb_vertices * sizeof(visited_node_t));
+	if (!visited)
+		return (NULL);
 
-    /* Perform backtracking */
-    if (!backtrack(start, target, visited, &count,
-                   (int)graph->nb_vertices))
-    {
-        /* No path found */
-        free(visited);
-        return (NULL);
-    }
+	count = 0;
+	if (!bt_recurse(start, target, visited, &count,
+			(int)graph->nb_vertices))
+	{
+		free(visited);
+		return (NULL);
+	}
 
-    /* Create path queue from visited info */
-    path = queue_create();
-    if (!path)
-    {
-        free(visited);
-        return (NULL);
-    }
-
-    /* Build path by tracing from target to start, collect in array, then reverse */
-    char **path_vertices = malloc((count + 1) * sizeof(char *));
-    if (!path_vertices)
-    {
-        free(path);
-        free(visited);
-        return (NULL);
-    }
-
-    /* Reconstruct path from target to start */
-    current = (vertex_t *)target;
-    int path_length = 0;
-    while (current)
-    {
-        city_copy = strdup(current->content);
-        if (!city_copy)
-        {
-            int i;
-            for (i = 0; i < path_length; i++)
-                free(path_vertices[i]);
-            free(path_vertices);
-            free(path);
-            free(visited);
-            return (NULL);
-        }
-        path_vertices[path_length++] = city_copy;
-        current = get_parent(visited, current, count);
-    }
-
-    /* Enqueue in reverse order (from start to target) */
-    int i;
-    for (i = path_length - 1; i >= 0; i--)
-    {
-        enqueue(path, path_vertices[i]);
-    }
-
-    free(path_vertices);
-    free(visited);
-    return (path);
+	path = build_path(visited, count, target);
+	free(visited);
+	return (path);
 }
