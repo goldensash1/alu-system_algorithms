@@ -2,7 +2,9 @@
 #define PATHFINDING_H
 
 #include <stdlib.h>
-#include "../graphs/graphs.h"
+
+typedef struct graph_s graph_t;
+typedef struct vertex_s vertex_t;
 
 /**
  * struct point_s - A point in a 2D space
