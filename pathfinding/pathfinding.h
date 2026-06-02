@@ -41,9 +41,8 @@ typedef struct queue_s
 	queue_node_t *back;
 } queue_t;
 
-/* Queue functions */
+/* Queue functions provided by libqueues */
 queue_t *queue_create(void);
-int enqueue(queue_t *queue, void *content);
 void *dequeue(queue_t *queue);
 void queue_free(queue_t *queue);
 

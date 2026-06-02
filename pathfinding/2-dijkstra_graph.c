@@ -6,6 +6,37 @@
 #include "pathfinding.h"
 
 /**
+ * enqueue - Add an element to the back of the queue
+ * @queue: Pointer to the queue
+ * @content: Data to add
+ *
+ * Return: 1 on success, 0 on failure
+ */
+static int enqueue(queue_t *queue, void *content)
+{
+	queue_node_t *node;
+
+	if (!queue)
+		return (0);
+	node = malloc(sizeof(queue_node_t));
+	if (!node)
+		return (0);
+	node->content = content;
+	node->next = NULL;
+	if (!queue->back)
+	{
+		queue->front = node;
+		queue->back = node;
+	}
+	else
+	{
+		queue->back->next = node;
+		queue->back = node;
+	}
+	return (1);
+}
+
+/**
  * struct dijk_node_s - Per-vertex data for Dijkstra's algorithm
  * @vertex: Pointer to the graph vertex
  * @distance: Shortest known distance from start
