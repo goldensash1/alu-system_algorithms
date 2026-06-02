@@ -2,7 +2,11 @@
 #define PATHFINDING_H
 
 #include <stdlib.h>
-#include "graphs.h"
+
+/* Include graphs.h if not already included */
+#ifndef GRAPHS_H
+# include "graphs.h"
+#endif
 
 /**
  * struct point_s - A point in a 2D space
@@ -11,8 +15,8 @@
  */
 typedef struct point_s
 {
-    int x;
-    int y;
+	int x;
+	int y;
 } point_t;
 
 /**
@@ -22,8 +26,8 @@ typedef struct point_s
  */
 typedef struct queue_node_s
 {
-    void *content;
-    struct queue_node_s *next;
+	void *content;
+	struct queue_node_s *next;
 } queue_node_t;
 
 /**
@@ -33,8 +37,8 @@ typedef struct queue_node_s
  */
 typedef struct queue_s
 {
-    queue_node_t *front;
-    queue_node_t *back;
+	queue_node_t *front;
+	queue_node_t *back;
 } queue_t;
 
 /* Queue functions */
@@ -45,10 +49,10 @@ void queue_free(queue_t *queue);
 
 /* Pathfinding functions */
 queue_t *backtracking_array(char **map, int rows, int cols,
-                            point_t const *start, point_t const *target);
+		point_t const *start, point_t const *target);
 queue_t *backtracking_graph(graph_t *graph, vertex_t const *start,
-                            vertex_t const *target);
+		vertex_t const *target);
 queue_t *dijkstra_graph(graph_t *graph, vertex_t const *start,
-                        vertex_t const *target);
+		vertex_t const *target);
 
 #endif /* PATHFINDING_H */
