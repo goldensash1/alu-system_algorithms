@@ -6,13 +6,29 @@
 #include "pathfinding.h"
 
 /**
- * enqueue - Add an element to the back of the queue
+ * queue_create - Create an empty queue
+ *
+ * Return: Pointer to new queue, or NULL on failure
+ */
+queue_t *queue_create(void)
+{
+	queue_t *q = malloc(sizeof(queue_t));
+
+	if (!q)
+		return (NULL);
+	q->front = NULL;
+	q->back = NULL;
+	return (q);
+}
+
+/**
+ * enqueue - Add an element to the back of a queue
  * @queue: Pointer to the queue
  * @content: Data to add
  *
  * Return: 1 on success, 0 on failure
  */
-static int enqueue(queue_t *queue, void *content)
+int enqueue(queue_t *queue, void *content)
 {
 	queue_node_t *node;
 
@@ -34,6 +50,28 @@ static int enqueue(queue_t *queue, void *content)
 		queue->back = node;
 	}
 	return (1);
+}
+
+/**
+ * dequeue - Remove and return the front element of a queue
+ * @queue: Pointer to the queue
+ *
+ * Return: Content pointer, or NULL if empty
+ */
+void *dequeue(queue_t *queue)
+{
+	queue_node_t *node;
+	void *content;
+
+	if (!queue || !queue->front)
+		return (NULL);
+	node = queue->front;
+	content = node->content;
+	queue->front = node->next;
+	if (!queue->front)
+		queue->back = NULL;
+	free(node);
+	return (content);
 }
 
 /**
