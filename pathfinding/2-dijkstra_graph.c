@@ -6,22 +6,6 @@
 #include "pathfinding.h"
 
 /**
- * queue_create - Create an empty queue
- *
- * Return: Pointer to new queue, or NULL on failure
- */
-queue_t *queue_create(void)
-{
-	queue_t *q = malloc(sizeof(queue_t));
-
-	if (!q)
-		return (NULL);
-	q->front = NULL;
-	q->back = NULL;
-	return (q);
-}
-
-/**
  * enqueue - Add an element to the back of a queue
  * @queue: Pointer to the queue
  * @content: Data to add
@@ -75,70 +59,6 @@ void *dequeue(queue_t *queue)
 }
 
 /**
- * struct dijk_node_s - Per-vertex data for Dijkstra's algorithm
- * @vertex: Pointer to the graph vertex
- * @distance: Shortest known distance from start
- * @previous: Previous vertex on the shortest path
- * @visited: 1 if this vertex has been finalised
- */
-typedef struct dijk_node_s
-{
-	vertex_t *vertex;
-	int distance;
-	vertex_t *previous;
-	int visited;
-} dijk_node_t;
-
-/**
- * init_data - Initialise Dijkstra data array from graph vertex list
- * @data: Array to initialise
- * @graph: The graph
- * @start: Starting vertex (gets distance 0)
- */
-static void init_data(dijk_node_t *data, graph_t *graph,
-		vertex_t const *start)
-{
-	vertex_t *v;
-	int i;
-
-	v = graph->vertices;
-	i = 0;
-	while (v && i < (int)graph->nb_vertices)
-	{
-		data[i].vertex = v;
-		data[i].distance = (v == start) ? 0 : INT_MAX;
-		data[i].previous = NULL;
-		data[i].visited = 0;
-		v = v->next;
-		i++;
-	}
-}
-
-/**
- * pick_min - Find the unvisited vertex with the smallest distance
- * @data: The data array
- * @n: Number of entries
- *
- * Return: Index of the minimum vertex, or -1 if none reachable
- */
-static int pick_min(dijk_node_t *data, int n)
-{
-	int i, best, best_dist;
-
-	best = -1;
-	best_dist = INT_MAX;
-	for (i = 0; i < n; i++)
-	{
-		if (!data[i].visited && data[i].distance < best_dist)
-		{
-			best_dist = data[i].distance;
-			best = i;
-		}
-	}
-	return (best);
-}
-
-/**
  * relax_edges - Update neighbour distances from the current vertex
  * @data: The data array
  * @n: Number of entries
@@ -147,21 +67,15 @@ static int pick_min(dijk_node_t *data, int n)
 static void relax_edges(dijk_node_t *data, int n, int cur_idx)
 {
 	edge_t *edge;
-	int j, new_dist, dest_idx;
+	int new_dist, dest_idx;
 
 	edge = data[cur_idx].vertex->edges;
 	while (edge)
 	{
-		dest_idx = -1;
-		for (j = 0; j < n; j++)
-		{
-			if (data[j].vertex == edge->dest)
-			{
-				dest_idx = j;
+		for (dest_idx = 0; dest_idx < n; dest_idx++)
+			if (data[dest_idx].vertex == edge->dest)
 				break;
-			}
-		}
-		if (dest_idx != -1 && !data[dest_idx].visited)
+		if (dest_idx < n && !data[dest_idx].visited)
 		{
 			new_dist = data[cur_idx].distance + edge->weight;
 			if (new_dist < data[dest_idx].distance)
@@ -175,7 +89,7 @@ static void relax_edges(dijk_node_t *data, int n, int cur_idx)
 }
 
 /**
- * reconstruct - Build the result queue from target back to start
+ * reconstruct - Build result queue tracing previous links from target to start
  * @data: The data array
  * @n: Number of entries
  * @target: The target vertex
@@ -194,7 +108,6 @@ static queue_t *reconstruct(dijk_node_t *data, int n,
 	arr = malloc((n + 1) * sizeof(char *));
 	if (!arr)
 		return (NULL);
-
 	cur = (vertex_t *)target;
 	len = 0;
 	while (cur)
@@ -208,19 +121,12 @@ static queue_t *reconstruct(dijk_node_t *data, int n,
 			return (NULL);
 		}
 		arr[len++] = copy;
-		cur = NULL;
-		for (j = 0; j < n; j++)
-		{
-			if (data[j].vertex == (vertex_t *)target)
-			{
-				cur = data[j].previous;
-				target = cur;
-				break;
-			}
-		}
+		j = 0;
+		while (j < n && data[j].vertex != cur)
+			j++;
+		cur = j < n ? data[j].previous : NULL;
 	}
-
-	path = queue_create();
+	path = calloc(1, sizeof(queue_t));
 	if (!path)
 	{
 		for (i = 0; i < len; i++)
@@ -228,10 +134,8 @@ static queue_t *reconstruct(dijk_node_t *data, int n,
 		free(arr);
 		return (NULL);
 	}
-
 	for (i = len - 1; i >= 0; i--)
 		enqueue(path, arr[i]);
-
 	free(arr);
 	return (path);
 }
@@ -248,49 +152,43 @@ queue_t *dijkstra_graph(graph_t *graph, vertex_t const *start,
 		vertex_t const *target)
 {
 	dijk_node_t *data;
-	queue_t *path;
-	int n, i, min_idx, target_idx;
+	vertex_t *v;
+	queue_t *path = NULL;
+	int n, i, j, min_idx;
 
 	if (!graph || !start || !target)
 		return (NULL);
-
 	n = (int)graph->nb_vertices;
 	data = malloc(n * sizeof(dijk_node_t));
 	if (!data)
 		return (NULL);
-
-	init_data(data, graph, start);
-
+	for (v = graph->vertices, i = 0; v && i < n; v = v->next, i++)
+	{
+		data[i].vertex = v;
+		data[i].distance = (v == start) ? 0 : INT_MAX;
+		data[i].previous = NULL;
+		data[i].visited = 0;
+	}
 	for (i = 0; i < n; i++)
 	{
-		min_idx = pick_min(data, n);
+		min_idx = -1;
+		for (j = 0; j < n; j++)
+			if (!data[j].visited && data[j].distance != INT_MAX
+					&& (min_idx < 0 || data[j].distance < data[min_idx].distance))
+				min_idx = j;
 		if (min_idx == -1)
 			break;
 		data[min_idx].visited = 1;
 		printf("Checking %s, distance from %s is %d\n",
-			data[min_idx].vertex->content,
-			start->content,
+			data[min_idx].vertex->content, start->content,
 			data[min_idx].distance);
 		relax_edges(data, n, min_idx);
 	}
-
-	target_idx = -1;
-	for (i = 0; i < n; i++)
-	{
-		if (data[i].vertex == target)
-		{
-			target_idx = i;
-			break;
-		}
-	}
-
-	if (target_idx == -1 || data[target_idx].distance == INT_MAX)
-	{
-		free(data);
-		return (NULL);
-	}
-
-	path = reconstruct(data, n, target);
+	j = 0;
+	while (j < n && data[j].vertex != target)
+		j++;
+	if (j < n && data[j].distance != INT_MAX)
+		path = reconstruct(data, n, target);
 	free(data);
 	return (path);
 }

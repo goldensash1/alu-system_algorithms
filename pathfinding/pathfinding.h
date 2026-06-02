@@ -42,6 +42,21 @@ typedef struct queue_s
 } queue_t;
 
 /**
+ * struct dijk_node_s - Per-vertex data for Dijkstra's algorithm
+ * @vertex: Pointer to the graph vertex
+ * @distance: Shortest known distance from start
+ * @previous: Previous vertex on the shortest path
+ * @visited: 1 if this vertex has been finalised
+ */
+typedef struct dijk_node_s
+{
+	vertex_t *vertex;
+	int distance;
+	vertex_t *previous;
+	int visited;
+} dijk_node_t;
+
+/**
  * struct visited_node_s - Tracks a visited vertex and its path parent
  * @vertex: Pointer to the visited vertex
  * @parent: Parent vertex in the discovered path
