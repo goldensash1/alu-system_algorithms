@@ -31,10 +31,11 @@ static vertex_t *find_vertex_by_name(const graph_t *graph, const char *name)
  * add_edge_node - append an edge node from src to dest
  * @src: source vertex
  * @dest: destination vertex
+ * @weight: edge weight
  *
  * Return: 1 on success, 0 on failure
  */
-static int add_edge_node(vertex_t *src, vertex_t *dest)
+static int add_edge_node(vertex_t *src, vertex_t *dest, int weight)
 {
 	edge_t *e = malloc(sizeof(edge_t));
 	edge_t *cur;
@@ -43,6 +44,7 @@ static int add_edge_node(vertex_t *src, vertex_t *dest)
 		return (0);
 
 	e->dest = dest;
+	e->weight = weight;
 	e->next = NULL;
 	if (!src->edges)
 		src->edges = e;
@@ -62,12 +64,13 @@ static int add_edge_node(vertex_t *src, vertex_t *dest)
  * @graph: pointer to the graph
  * @src: name of source vertex
  * @dest: name of destination vertex
+ * @weight: edge weight
  * @type: edge type (UNIDIRECTIONAL or BIDIRECTIONAL)
  *
  * Return: 1 on success, 0 on failure
  */
 int graph_add_edge(graph_t *graph, const char *src, const char *dest,
-	edge_type_t type)
+	int weight, edge_type_t type)
 {
 	vertex_t *v_src, *v_dest;
 
@@ -80,13 +83,13 @@ int graph_add_edge(graph_t *graph, const char *src, const char *dest,
 		return (0);
 
 	/* add src -> dest */
-	if (!add_edge_node(v_src, v_dest))
+	if (!add_edge_node(v_src, v_dest, weight))
 		return (0);
 
 	/* if bidirectional, add dest -> src; rollback on failure */
 	if (type == BIDIRECTIONAL)
 	{
-		if (!add_edge_node(v_dest, v_src))
+		if (!add_edge_node(v_dest, v_src, weight))
 		{
 			/* rollback last edge added to v_src */
 			edge_t *tmp = v_src->edges, *prev = NULL;

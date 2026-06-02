@@ -29,10 +29,12 @@ static int vertex_exists(const graph_t *graph, const char *str)
  * create_vertex - allocate and initialize a vertex
  * @graph: graph the vertex belongs to
  * @str: string content for the new vertex
+ * @x: x coordinate
+ * @y: y coordinate
  *
  * Return: pointer to the new vertex, or NULL on failure
  */
-static vertex_t *create_vertex(graph_t *graph, const char *str)
+static vertex_t *create_vertex(graph_t *graph, const char *str, int x, int y)
 {
 	vertex_t *v;
 
@@ -47,6 +49,8 @@ static vertex_t *create_vertex(graph_t *graph, const char *str)
 		return (NULL);
 	}
 
+	v->x = x;
+	v->y = y;
 	v->nb_edges = 0;
 	v->edges = NULL;
 	v->next = NULL;
@@ -78,10 +82,12 @@ static void append_vertex(graph_t *graph, vertex_t *v)
  * graph_add_vertex - add a vertex with a copy of str to graph
  * @graph: graph to add to
  * @str: string content for vertex
+ * @x: x coordinate
+ * @y: y coordinate
  *
  * Return: pointer to created vertex or NULL on failure
  */
-vertex_t *graph_add_vertex(graph_t *graph, const char *str)
+vertex_t *graph_add_vertex(graph_t *graph, const char *str, int x, int y)
 {
 	vertex_t *v;
 
@@ -91,7 +97,7 @@ vertex_t *graph_add_vertex(graph_t *graph, const char *str)
 	if (vertex_exists(graph, str))
 		return (NULL);
 
-	v = create_vertex(graph, str);
+	v = create_vertex(graph, str, x, y);
 	if (!v)
 		return (NULL);
 
